@@ -17,6 +17,43 @@ let player = {
     velocityX: playerVelocityX
 }
 
+//parts of player
+let playerCenter = {
+    x: player.x + player.width / 2 - (player.width / 16),
+    y: player.y,
+    width: player.width / 8,
+    height: playerHeight,
+    velocityX: playerVelocityX
+}
+let playerInnerLeft = {
+    x: playerCenter.x - player.width / 4,
+    y: player.y,
+    width: player.width / 4,
+    height: playerHeight,
+    velocityX: playerVelocityX
+}
+let playerOuterLeft = {
+    x: player.x,
+    y: player.y,
+    width: 3 * player.width / 16,
+    height: playerHeight,
+    velocityX: playerVelocityX
+}
+let playerInnerRight = {
+    x: playerCenter.x + player.width / 4,
+    y: player.y,
+    width: player.width / 4,
+    height: playerHeight,
+    velocityX: playerVelocityX
+}
+let playerOuterRight = {
+    x: playerCenter.x + player.width / 16 + player.width / 4,
+    y: player.y,
+    width: 3 * player.width / 16,
+    height: playerHeight,
+    velocityX: playerVelocityX
+}
+
 //ball
 let ballWidth = 15;
 let ballHeight = 15;
@@ -47,6 +84,7 @@ let blockX = 35;
 let blockY = 45;
 
 let score = 0;
+let randomNumber = 0;
 let gameOver = false;
 
 
@@ -59,6 +97,12 @@ window.onload = function() {
     //draw initial player
     context.fillStyle = "lightgreen";
     context.fillRect(player.x, player.y, player.width, player.height);
+    context.fillRect(playerCenter.x, playerCenter.y, playerCenter.width, playerCenter.height);
+    context.fillRect(playerInnerLeft.x, playerInnerLeft.y, playerInnerLeft.width, playerInnerLeft.height);
+    context.fillRect(playerOuterLeft.x, playerOuterLeft.y, playerOuterLeft.width, playerOuterLeft.height);
+    context.fillRect(playerInnerRight.x, playerInnerRight.y, playerInnerRight.width, playerInnerRight.height);
+    context.fillRect(playerOuterRight.x, playerOuterRight.y, playerOuterRight.width, playerOuterRight.height);
+
 
     requestAnimationFrame(update);
     document.addEventListener("keydown", movePlayer);
@@ -77,16 +121,32 @@ function update() {
     //player
     context.fillStyle = "lightgreen";
     context.fillRect(player.x, player.y, player.width, player.height);
+    //parts of player
+    context.fillRect(playerCenter.x, playerCenter.y, playerCenter.width, playerCenter.height);
+    context.fillRect(playerInnerLeft.x, playerInnerLeft.y, playerInnerLeft.width, playerInnerLeft.height);
+    context.fillRect(playerOuterLeft.x, playerOuterLeft.y, playerOuterLeft.width, playerOuterLeft.height);
+    context.fillRect(playerInnerRight.x, playerInnerRight.y, playerInnerRight.width, playerInnerRight.height);
+    context.fillRect(playerOuterRight.x, playerOuterRight.y, playerOuterRight.width, playerOuterRight.height);
+
 
     context.fillStyle = "white";
     ball.x += ball.velocityX;
     ball.y += ball.velocityY;
     context.fillRect(ball.x, ball.y, ball.width, ball.height)
 
+
     //bounce ball off walls
-    if (ball.y <= 0) {
-        //if ball touches top of canvas
-        ball.velocityY *= -1;
+    if (ball.y <= 0) { //if ball touches top of canvas
+        if (isPerpendicular(ball, 30)) { // check if ball.x changes after 30 frames
+            randomAngle = Math.floor(Math.random() * 360) + 1; // Random 0-360 degrees
+            ball.velocityX = Math.cos(randomAngle * Math.PI / 180); // Convert degree to radians for cosine
+            ball.velocityY *= -1;
+            randomNumber = ball.velocityX;
+            !isPerpendicular(); //set it to false to bounce off top canvas normal then
+        }
+        else {  //if ball.x changes then bounce off normal
+            ball.velocityY *= -1; //reverse direction
+    }
     }
     else if (ball.x <= 0 || (ball.x + ball.width) >= boardWidth) {
         //if ball touches left or right of canvas
@@ -102,10 +162,88 @@ function update() {
 
     //bounce the ball off player paddle
     if(topCollision(ball, player) || bottomCollision(ball, player)) {
-        ball.velocityY *= -1; //flip y direction up or down
+    if(topCollision(ball, playerCenter) || bottomCollision(ball, playerCenter)) {
+        ball.velocityX = 0;
+        ball.velocityY *= -1;
+    }
+    else if (topCollision(ball, playerInnerLeft) || bottomCollision(ball, playerInnerLeft)) {
+           // Calculate the intersection point of the ball and the paddle
+           let intersectionX = ball.x + ball.width / 2;
+    
+           // Calculate the distance from the intersection point to the paddle's center
+           let distanceFromCenter = intersectionX - (player.x + player.width / 2);
+           
+           // Normalize the distance to the range [-1, 1]
+           let normalizedDistance = distanceFromCenter / (player.width / 2);
+       
+           // Calculate the new velocities
+           ball.velocityX = normalizedDistance * ballVelocityX;
+           ball.velocityY = -Math.sqrt(ballVelocityX ** 2 - ball.velocityX ** 2);
+    }
+    else if (topCollision(ball, playerInnerRight) || bottomCollision(ball, playerInnerRight)) {
+           // Calculate the intersection point of the ball and the paddle
+           let intersectionX = ball.x + ball.width / 2;
+    
+           // Calculate the distance from the intersection point to the paddle's center
+           let distanceFromCenter = intersectionX - (player.x + player.width / 2);
+           
+           // Normalize the distance to the range [-1, 1]
+           let normalizedDistance = distanceFromCenter / (player.width / 2);
+       
+           // Calculate the new velocities
+           ball.velocityX = normalizedDistance * ballVelocityX;
+           ball.velocityY = -Math.sqrt(ballVelocityX ** 2 - ball.velocityX ** 2);
+
+    }
+    else if (topCollision(ball, playerOuterLeft) || bottomCollision(ball, playerOuterLeft)) {
+        ball.velocityY *= -1;
+    }
+    else if (topCollision(ball, playerOuterRight) || bottomCollision(ball, playerOuterRight)) {
+        ball.velocityY *= -1;    
+    }
+    else{
+        ball.velocityY *= -1;
+    }
     }
     else if (leftCollision(ball, player) || rightCollision(ball, player)) {
-        ball.velocityX *= -1;
+        if(leftCollision(ball, playerCenter) || rightCollision(ball, playerCenter)) {
+            ball.velocityX *= -1;
+            ball.velocityY = 0;
+        }
+        else if (leftCollision(ball, playerInnerLeft) || rightCollision(ball, playerInnerLeft)) {
+           // Calculate the intersection point of the ball and the paddle
+           let intersectionX = ball.x + ball.width / 2;
+    
+           // Calculate the distance from the intersection point to the paddle's center
+           let distanceFromCenter = intersectionX - (player.x + player.width / 2);
+           
+           // Normalize the distance to the range [-1, 1]
+           let normalizedDistance = distanceFromCenter / (player.width / 2);
+       
+           // Calculate the new velocities
+           ball.velocityX = normalizedDistance * ballVelocityX;
+           ball.velocityY = -Math.sqrt(ballVelocityX ** 2 - ball.velocityX ** 2);    
+        }
+        else if (leftCollision(ball, playerInnerRight) || rightCollision(ball, playerInnerRight)) {
+           // Calculate the intersection point of the ball and the paddle
+    let intersectionX = ball.x + ball.width / 2;
+    
+    // Calculate the distance from the intersection point to the paddle's center
+    let distanceFromCenter = intersectionX - (player.x + player.width / 2);
+    
+    // Normalize the distance to the range [-1, 1]
+    let normalizedDistance = distanceFromCenter / (player.width / 2);
+
+    // Calculate the new velocities
+    ball.velocityX = normalizedDistance * ballVelocityX;
+    ball.velocityY = -Math.sqrt(ballVelocityX ** 2 - ball.velocityX ** 2);    
+        }
+        else if (leftCollision(ball, playerOuterLeft) || rightCollision(ball, playerOuterLeft)) {
+            ball.velocityX *= -1;
+        }
+        else if (leftCollision(ball, playerOuterRight) || rightCollision(ball, playerOuterRight)) {
+            ball.velocityX *= -1;
+        }
     }
 
     //blocks
@@ -139,6 +277,10 @@ function update() {
     //score
     context.font = "20px sans-serif"
     context.fillText(score, 10, 25);
+
+    //random
+    context.font = "20px sans-serif"
+    context.fillText(randomNumber, 1520, 25);
 }
 
 function outOfBounds(xPosition) {
@@ -154,15 +296,43 @@ function movePlayer(e) {
     }
     if (e.code == "ArrowLeft") {
         let nextPlayerX = player.x - player.velocityX;
+        //parts of player
+        let nextPlayerCenterX = playerCenter.x - playerCenter.velocityX;
+        let nextPlayerInnerLeftX = playerInnerLeft.x - playerInnerLeft.velocityX;
+        let nextPlayerOuterLeftX = playerOuterLeft.x - playerOuterLeft.velocityX;
+        let nextPlayerInnerRightX = playerInnerRight.x - playerInnerRight.velocityX;
+        let nextPlayerOuterRightX = playerOuterRight.x - playerOuterRight.velocityX;
+
         if(!outOfBounds(nextPlayerX)) {
             player.x = nextPlayerX;
+
+            //parts of player
+            playerCenter.x = nextPlayerCenterX;
+            playerInnerLeft.x =  nextPlayerInnerLeftX;
+            playerOuterLeft.x = nextPlayerOuterLeftX;
+            playerInnerRight.x = nextPlayerInnerRightX;
+            playerOuterRight.x = nextPlayerOuterRightX;
         }
 
     }
     else if (e.code == "ArrowRight") {
         let nextPlayerX = player.x + player.velocityX;
+
+        //parts of player
+        let nextPlayerCenterX = playerCenter.x + playerCenter.velocityX;
+        let nextPlayerInnerLeftX = playerInnerLeft.x + playerInnerLeft.velocityX;
+        let nextPlayerOuterLeftX = playerOuterLeft.x + playerOuterLeft.velocityX;
+        let nextPlayerInnerRightX = playerInnerRight.x + playerInnerRight.velocityX;
+        let nextPlayerOuterRightX = playerOuterRight.x + playerOuterRight.velocityX;
         if(!outOfBounds(nextPlayerX)) {
             player.x = nextPlayerX;
+
+            //parts of player
+            playerCenter.x = nextPlayerCenterX;
+            playerInnerLeft.x =  nextPlayerInnerLeftX;
+            playerOuterLeft.x = nextPlayerOuterLeftX;
+            playerInnerRight.x = nextPlayerInnerRightX;
+            playerOuterRight.x = nextPlayerOuterRightX;
         }
     }
 }
@@ -216,6 +386,43 @@ function resetGame() {
         height: playerHeight,
         velocityX: playerVelocityX
     }
+    //parts of player
+    playerCenter = {
+        x: player.x + player.width / 2 - (player.width / 16),
+        y: player.y,
+        width: player.width / 8,
+        height: playerHeight,
+        velocityX: playerVelocityX
+    }
+    playerInnerLeft = {
+        x: playerCenter.x - player.width / 4,
+        y: player.y,
+        width: player.width / 4,
+        height: playerHeight,
+        velocityX: playerVelocityX
+    }
+    playerOuterLeft = {
+        x: player.x,
+        y: player.y,
+        width: 3 * player.width / 16,
+        height: playerHeight,
+        velocityX: playerVelocityX
+    }
+    playerInnerRight = {
+        x: playerCenter.x + player.width / 4,
+        y: player.y,
+        width: player.width / 4,
+        height: playerHeight,
+        velocityX: playerVelocityX
+    }
+    playerOuterRight = {
+        x: playerCenter.x + player.width / 16 + player.width / 4,
+        y: player.y,
+        width: 3 * player.width / 16,
+        height: playerHeight,
+        velocityX: playerVelocityX
+    }
+    
     ball = {
         x: boardWidth/2,
         y: boardHeight/2,
@@ -229,4 +436,15 @@ function resetGame() {
     blockRows = 3;
     score = 0;
     createBlocks();
+}
+
+// check if ball.x changes
+function isPerpendicular(ball, nFrames) {
+    // Get ball's position after n frames
+    ballX1 = ball.x;
+    ballX2 = ballX1 + ball.velocityX * nFrames;
+
+    // Check if ball.x is change (if vector is perpendicular with Ox)
+    //ball.x doesn't change return true;
+    return ballX1 == ballX2;
 }
